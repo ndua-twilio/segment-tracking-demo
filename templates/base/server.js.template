@@ -1,0 +1,109 @@
+const express = require('express');
+const cors = require('cors');
+const axios = require('axios');
+
+const app = express();
+const PORT = 3000;
+
+// Segment credentials (automatically configured during generation)
+const CONFIG = {
+    PROFILES_API_TOKEN: '{{apiToken}}',
+    SPACE_ID: '{{spaceId}}'
+};
+
+// Enable CORS for local development
+app.use(cors());
+app.use(express.json());
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+    res.json({
+        status: 'ok',
+        configured: true
+    });
+});
+
+// Proxy endpoint for Profiles API
+app.get('/api/profile/:profileId', async (req, res) => {
+    const { profileId } = req.params;
+
+    try {
+        console.log(`Fetching profile: ${profileId}`);
+
+        // Determine if this is an anonymous_id or user_id
+        let apiUrl;
+        if (profileId.startsWith('anonymous_id:')) {
+            const anonymousId = profileId.replace('anonymous_id:', '');
+            apiUrl = `https://profiles.segment.com/v1/spaces/${CONFIG.SPACE_ID}/collections/users/profiles/anonymous_id:${anonymousId}/traits`;
+        } else {
+            // Assume it's a user_id (email)
+            apiUrl = `https://profiles.segment.com/v1/spaces/${CONFIG.SPACE_ID}/collections/users/profiles/user_id:${profileId}/traits`;
+        }
+
+        const response = await axios.get(apiUrl, {
+            auth: {
+                username: CONFIG.PROFILES_API_TOKEN,
+                password: ''
+            },
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        // Also fetch audiences for this profile
+        let audiences = [];
+        try {
+            let audiencesUrl;
+            if (profileId.startsWith('anonymous_id:')) {
+                const anonymousId = profileId.replace('anonymous_id:', '');
+                audiencesUrl = `https://profiles.segment.com/v1/spaces/${CONFIG.SPACE_ID}/collections/users/profiles/anonymous_id:${anonymousId}/audiences`;
+            } else {
+                audiencesUrl = `https://profiles.segment.com/v1/spaces/${CONFIG.SPACE_ID}/collections/users/profiles/user_id:${profileId}/audiences`;
+            }
+
+            const audiencesResponse = await axios.get(audiencesUrl, {
+                auth: {
+                    username: CONFIG.PROFILES_API_TOKEN,
+                    password: ''
+                },
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            // Extract audience keys
+            audiences = audiencesResponse.data.audiences?.map(a => a.key) || [];
+        } catch (audienceError) {
+            console.warn('Could not fetch audiences:', audienceError.message);
+        }
+
+        // Return combined data
+        res.json({
+            traits: response.data.traits || {},
+            audiences: audiences
+        });
+
+    } catch (error) {
+        console.error('Profiles API error:', error.response?.data || error.message);
+
+        if (error.response?.status === 404) {
+            // Profile doesn't exist yet - this is normal for new visitors
+            return res.json({
+                traits: {},
+                audiences: [],
+                new_profile: true
+            });
+        }
+
+        res.status(error.response?.status || 500).json({
+            error: 'Failed to fetch profile',
+            details: error.response?.data || error.message
+        });
+    }
+});
+
+// Start server
+app.listen(PORT, () => {
+    console.log(`\n{{companyName}} Demo Proxy Server running on http://localhost:${PORT}`);
+    console.log(`\nServer is ready! Open index.html to test personalization.\n`);
+});
