@@ -28,20 +28,20 @@ Ask the user these questions in the conversation:
 5. **Space ID:** "What's the Space ID?"
    - Validate: starts with "spa_"
 
-6. **AI Model (optional):** "Which AI model for content generation? (opus/sonnet) [default: sonnet]"
-
-7. **Output Location:** "Where should I create the demo? (provide full path or just press enter for current directory)"
+6. **Output Location:** "Where should I create the demo? (provide full path or just press enter for current directory)"
    - Default: current working directory
 
-8. **Website (optional):** "Company website URL? (optional - helps with context)"
+7. **Website (optional):** "Company website URL? (optional - helps with context)"
 
-9. **Notes (optional):** "Any notes or context about this prospect? (Gong transcript, use cases, etc.)"
+8. **Notes (optional):** "Any notes or context about this prospect? (Gong transcript, use cases, etc.)"
 
 ### Phase 2: Generate Content
 
+**Templates Location:** All templates are in `/Users/ndua/Documents/Projects/segment-demo-generator/templates/base/` relative to the skill repository root.
+
 Read `/Users/ndua/Documents/Projects/segment-demo-generator/lib/ai-generator.js` to see the generation guides.
 
-Generate the following based on industry and context:
+Generate the following based on industry and context (Claude generates this directly, no API calls needed):
 
 **1. Products (5-6 items)**
 For each product:
