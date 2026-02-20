@@ -544,27 +544,21 @@ if (typeof analytics !== 'undefined') {
     });
 }
 
+// Check for reset URL parameter
+const urlParams = new URLSearchParams(window.location.search);
+if (urlParams.get('reset') === 'true') {
+    localStorage.clear();
+    if (typeof analytics !== 'undefined' && analytics.reset) {
+        analytics.reset();
+    }
+    window.location.href = window.location.pathname;
+}
+
 // Demo helper functions - available in console
 
-// Soft Reset: Clear viewed products only (keeps same anonymous user)
-window.softReset = function() {
-    console.log('Soft Reset: Clearing viewed products...');
-
-    // Clear localStorage (viewed products list)
-    localStorage.clear();
-
-    console.log('Viewed products cleared! "Continue Where You Left Off" will disappear.');
-    console.log('Same anonymous user - events still tracked to Segment');
-
-    // Reload page
-    setTimeout(() => {
-        location.reload();
-    }, 500);
-};
-
-// Hard Reset: Create brand new anonymous user
-window.hardReset = function() {
-    console.log('Hard Reset: Creating new anonymous user...');
+// Reset Demo: Create brand new anonymous user
+window.resetDemo = function() {
+    console.log('Resetting demo: Creating new anonymous user...');
 
     // Clear localStorage
     localStorage.clear();
@@ -583,9 +577,6 @@ window.hardReset = function() {
     }, 500);
 };
 
-// Legacy alias for backwards compatibility
-window.resetDemo = window.hardReset;
-
-console.log('Demo Reset Commands:');
-console.log('   softReset()  - Clear viewed products only (same Segment user)');
-console.log('   hardReset()  - New anonymous user (fresh start)');
+console.log('Demo Reset Command:');
+console.log('   resetDemo() - New anonymous user (fresh start)');
+console.log('   Or use: index.html?reset=true for shareable reset link');
