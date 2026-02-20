@@ -1,0 +1,591 @@
+// Configuration
+const CONFIG = {
+    apiEndpoint: 'http://localhost:3000/api/profile' // Local proxy server
+};
+
+// Toast notification function - Clean Segment green style
+function showToast(title, message, duration = 8000) {
+    const container = document.getElementById('toastContainer');
+    if (!container) return;
+
+    const toast = document.createElement('div');
+    toast.className = 'toast';
+
+    toast.innerHTML = `
+        <div class="toast-title">${title}</div>
+        <div class="toast-message">${message}</div>
+    `;
+
+    container.appendChild(toast);
+
+    // Auto-remove after duration
+    setTimeout(() => {
+        toast.classList.add('fadeOut');
+        setTimeout(() => {
+            container.removeChild(toast);
+        }, 400);
+    }, duration);
+}
+
+// Parse URL parameters (for email campaign tracking, etc.)
+function getUrlParams() {
+    const params = new URLSearchParams(window.location.search);
+    const result = {};
+    for (const [key, value] of params) {
+        result[key] = value;
+    }
+    return result;
+}
+
+// Check if visitor arrived from email campaign or other identified source
+function handleIdentifiedVisitor() {
+    const params = getUrlParams();
+
+    // If we have email parameter, identify the user
+    if (params.email) {
+        const traits = {
+            email: params.email
+        };
+
+        // Add optional parameters
+        if (params.fname) traits.first_name = params.fname;
+        if (params.lname) traits.last_name = params.lname;
+        if (params.phone) traits.phone = params.phone;
+        if (params.location_visit) traits.{{traits.lastLocationVisit}} = params.location_visit;
+        if (params.location_date) traits.last_location_date = params.location_date;
+        if (params.interested_in) traits.interested_in_product = params.interested_in;
+        if (params.product_purchased) traits.product_purchased = params.product_purchased;
+        if (params.purchase_date) traits.purchase_date = params.purchase_date;
+        if (params.owner === 'true') traits.is_owner = true;
+
+        // Identify the user
+        analytics.identify(params.email, traits);
+
+        // Track the source
+        const context = {};
+        if (params.source) context.source = params.source;
+        if (params.campaign) context.campaign = params.campaign;
+        if (params.utm_source) context.utm_source = params.utm_source;
+        if (params.utm_medium) context.utm_medium = params.utm_medium;
+        if (params.utm_campaign) context.utm_campaign = params.utm_campaign;
+
+        console.log('Identified visitor from URL params:', params.email);
+
+        return context;
+    }
+
+    return {};
+}
+
+// Initialize tracking when analytics is ready
+if (typeof analytics !== 'undefined') {
+    analytics.ready(function() {
+        // Handle identified visitors first
+        const pageContext = handleIdentifiedVisitor();
+
+        // Track page view on load
+        analytics.page('Home', {
+            path: window.location.pathname,
+            url: window.location.href,
+            title: document.title,
+            ...pageContext
+        });
+    });
+}
+
+// Utility: Get Anonymous ID from Segment
+function getAnonymousId() {
+    if (typeof analytics !== 'undefined' && analytics.user) {
+        return analytics.user().anonymousId();
+    }
+    return null;
+}
+
+// Utility: Get User ID if identified
+function getUserId() {
+    if (typeof analytics !== 'undefined' && analytics.user) {
+        return analytics.user().id();
+    }
+    return null;
+}
+
+// Fetch profile data from Profiles API via proxy
+async function fetchProfileData() {
+    const userId = getUserId();
+    const anonymousId = getAnonymousId();
+
+    // Use userId if available, otherwise use anonymousId
+    const profileId = userId || `anonymous_id:${anonymousId}`;
+
+    if (!profileId) {
+        console.log('No profile ID available yet');
+        return null;
+    }
+
+    try {
+        const response = await fetch(`${CONFIG.apiEndpoint}/${encodeURIComponent(profileId)}`);
+
+        if (!response.ok) {
+            console.error('Profile API error:', response.status);
+            return null;
+        }
+
+        const data = await response.json();
+        console.log('Profile data loaded:', data);
+
+        // Store globally for debugging
+        window.lastProfileData = data;
+
+        return data;
+    } catch (error) {
+        console.error('Error fetching profile:', error);
+        return null;
+    }
+}
+
+// Personalize hero section based on product interest
+function personalizeHero(productName) {
+    if (!productName || !PRODUCT_DATA[productName]) {
+        console.warn(`Cannot personalize hero: product "${productName}" not found in PRODUCT_DATA`);
+        return;
+    }
+
+    const heroData = PRODUCT_DATA[productName];
+    const heroSection = document.getElementById('heroSection');
+    const heroTitle = document.getElementById('heroTitle');
+    const heroSubtitle = document.getElementById('heroSubtitle');
+    const heroButton = document.getElementById('heroButton');
+
+    if (!heroSection) {
+        console.error('Hero section not found!');
+        return;
+    }
+
+    // Update hero content with smooth transition
+    heroTitle.style.opacity = '0';
+    heroSubtitle.style.opacity = '0';
+
+    setTimeout(() => {
+        // Update text content
+        heroTitle.textContent = heroData.title;
+        heroSubtitle.textContent = heroData.subtitle;
+        heroButton.textContent = heroData.cta;
+
+        // Update hero class for color change
+        const productClass = productName.toLowerCase().replace(/ /g, '-');
+        heroSection.className = 'hero ' + productClass;
+
+        console.log(`Hero updated: class="${heroSection.className}", title="${heroData.title}"`);
+
+        // Fade back in
+        heroTitle.style.opacity = '1';
+        heroSubtitle.style.opacity = '1';
+    }, 300);
+}
+
+// Personalize page based on profile data AND localStorage
+function personalizePage(profileData) {
+    const traits = (profileData && profileData.traits) ? profileData.traits : {};
+
+    // 1. PERSONALIZE HERO - Priority order:
+    // localStorage (instant) > Segment traits > computed traits
+    let featuredProduct = null;
+
+    // HIGHEST PRIORITY: localStorage (instant, no API delay)
+    const viewedProducts = getViewedProducts();
+    if (viewedProducts.length > 0) {
+        featuredProduct = viewedProducts[0]; // Most recent
+        console.log(`Personalizing hero based on localStorage: ${featuredProduct}`);
+    }
+
+    // Second: explicit interest from traits (email campaigns, location visits)
+    if (!featuredProduct && traits.interested_in_product && PRODUCT_DATA[traits.interested_in_product]) {
+        featuredProduct = traits.interested_in_product;
+        console.log(`Personalizing hero based on interested_in_product: ${featuredProduct}`);
+    }
+
+    // Third: last product viewed from traits
+    if (!featuredProduct && traits.{{traits.lastProductViewed}} && PRODUCT_DATA[traits.{{traits.lastProductViewed}}]) {
+        featuredProduct = traits.{{traits.lastProductViewed}};
+        console.log(`Personalizing hero based on {{traits.lastProductViewed}}: ${featuredProduct}`);
+    }
+
+    // Fourth: products_viewed_list from traits
+    if (!featuredProduct && traits.{{traits.productsViewedList}} && traits.{{traits.productsViewedList}}.length > 0) {
+        featuredProduct = traits.{{traits.productsViewedList}}[0];
+        console.log(`Personalizing hero based on {{traits.productsViewedList}}: ${featuredProduct}`);
+    }
+
+    // Fifth: computed trait - most popular page
+    if (!featuredProduct && traits.most_popular_page) {
+        for (const productName in PRODUCT_DATA) {
+            if (traits.most_popular_page.includes(productName)) {
+                featuredProduct = productName;
+                console.log(`Personalizing hero based on most_popular_page: ${featuredProduct}`);
+                break;
+            }
+        }
+    }
+
+    // Sixth: computed trait - products_viewed array
+    if (!featuredProduct && traits.products_viewed && traits.products_viewed.length > 0) {
+        featuredProduct = traits.products_viewed[0];
+        console.log(`Personalizing hero based on computed products_viewed: ${featuredProduct}`);
+    }
+
+    if (featuredProduct) {
+        personalizeHero(featuredProduct);
+    } else {
+        console.log('No personalization data available yet - user is brand new');
+    }
+
+    // 2. Personalized greeting banner (works better for known users)
+    if (traits.first_name || traits.email) {
+        const banner = document.getElementById('personalBanner');
+        const message = document.getElementById('personalMessage');
+
+        if (traits.first_name) {
+            message.innerHTML = `Welcome back, ${traits.first_name}!`;
+        } else {
+            message.innerHTML = `Welcome back! We remember you.`;
+        }
+
+        banner.classList.add('active');
+    }
+
+    // 3. Show visitor stats (works for both anonymous and known)
+    const hasStats = traits.{{traits.totalWebsiteVisits}} !== undefined ||
+                     traits.time_since_purchase ||
+                     traits.{{traits.lastLocationVisit}} ||
+                     traits.last_location_date ||
+                     traits.product_purchased;
+
+    if (hasStats) {
+        const statsDiv = document.getElementById('visitorStats');
+        const statsContent = document.getElementById('statsContent');
+
+        let statsHtml = '';
+
+        // Website visits
+        if (traits.{{traits.totalWebsiteVisits}} !== undefined) {
+            statsHtml += `You've visited us <strong>${traits.{{traits.totalWebsiteVisits}}} times</strong> in the last 90 days. `;
+        }
+
+        // Product ownership
+        if (traits.product_purchased) {
+            statsHtml += `You own a <strong>${traits.product_purchased}</strong>. `;
+
+            if (traits.purchase_date) {
+                const purchaseDate = new Date(traits.purchase_date);
+                const now = new Date();
+                const months = Math.floor((now - purchaseDate) / (1000 * 60 * 60 * 24 * 30));
+                if (months > 0) {
+                    statsHtml += `Purchased <strong>${months} months ago</strong>. `;
+                }
+            }
+        } else if (traits.time_since_purchase) {
+            statsHtml += `It's been <strong>${traits.time_since_purchase}</strong> since your purchase. `;
+        }
+
+        // Location visit
+        if (traits.{{traits.lastLocationVisit}} || traits.last_location_date) {
+            const location = traits.{{traits.lastLocationVisit}} || 'our location';
+            if (traits.last_location_date) {
+                const visitDate = new Date(traits.last_location_date);
+                const now = new Date();
+                const daysAgo = Math.floor((now - visitDate) / (1000 * 60 * 60 * 24));
+
+                if (daysAgo === 0) {
+                    statsHtml += `You visited <strong>${location}</strong> today! `;
+                } else if (daysAgo === 1) {
+                    statsHtml += `You visited <strong>${location}</strong> yesterday. `;
+                } else {
+                    statsHtml += `You visited <strong>${location}</strong> <strong>${daysAgo} days ago</strong>. `;
+                }
+            } else {
+                statsHtml += `Your last visit was at <strong>${location}</strong>. `;
+            }
+        }
+
+        // Interested in product
+        if (traits.interested_in_product && !traits.product_purchased) {
+            statsHtml += `Interested in: <strong>${traits.interested_in_product}</strong>. `;
+        }
+
+        if (statsHtml) {
+            statsContent.innerHTML = statsHtml;
+            statsDiv.classList.add('active');
+        }
+    }
+
+    // 4. Show previously viewed products (localStorage + Segment traits)
+    const localViewedProducts = getViewedProducts();
+    const segmentViewedProducts = traits.{{traits.productsViewedList}} || traits.products_viewed || [];
+
+    // Merge both sources, preferring localStorage for recency
+    const allViewedProducts = [...new Set([...localViewedProducts, ...segmentViewedProducts])];
+
+    if (allViewedProducts.length > 0) {
+        const viewedDiv = document.getElementById('previouslyViewed');
+        const viewedContent = document.getElementById('viewedContent');
+
+        const productsList = allViewedProducts.slice(0, 5).join(', ');
+        viewedContent.innerHTML = `You've been looking at: <strong>${productsList}</strong>. Ready to learn more?`;
+        viewedDiv.classList.add('active');
+    }
+
+    // 5. Update section title based on audience or traits
+    const audiences = (profileData && profileData.audiences) ? profileData.audiences : [];
+    const sectionTitle = document.getElementById('productsSection');
+
+    // Check if they're an owner (either from audience or trait)
+    if (audiences.includes('new_customers') || traits.is_owner || traits.product_purchased) {
+        const productName = traits.product_purchased || 'Your Purchase';
+        sectionTitle.innerHTML = `{{messaging.postPurchase}}`.replace('{{product}}', productName);
+    } else if (audiences.includes('inactive_customers')) {
+        sectionTitle.innerHTML = 'What\'s New Since Your Last Visit';
+    } else if (audiences.includes('high_intent_known_visitors')) {
+        sectionTitle.innerHTML = '{{messaging.recommendedForYou}}';
+    } else if (audiences.includes('high_intent_anonymous_visitors')) {
+        sectionTitle.innerHTML = '{{messaging.basedOnInterest}}';
+    }
+
+    // 6. Pre-fill form if we have user data (known users only)
+    if (traits.first_name) document.getElementById('firstName').value = traits.first_name;
+    if (traits.last_name) document.getElementById('lastName').value = traits.last_name;
+    if (traits.email) document.getElementById('email').value = traits.email;
+    if (traits.phone) document.getElementById('phone').value = traits.phone;
+
+    console.log('Page personalization complete');
+}
+
+// Initialize personalization on page load
+async function initPersonalization() {
+    // 1. First, check localStorage for instant personalization
+    const viewedProducts = getViewedProducts();
+    if (viewedProducts.length > 0) {
+        console.log('Instant personalization from localStorage:', viewedProducts);
+        personalizePage(null); // Will use localStorage data
+    }
+
+    // 2. Then fetch from Segment for additional data
+    if (typeof analytics !== 'undefined') {
+        analytics.ready(async function() {
+            // Small delay to ensure anonymous ID is set
+            setTimeout(async () => {
+                const profileData = await fetchProfileData();
+                if (profileData) {
+                    personalizePage(profileData);
+                } else {
+                    console.log('No profile data available from Segment - user is brand new');
+                    // Still personalize based on localStorage if available
+                    if (viewedProducts.length > 0) {
+                        personalizePage(null);
+                    }
+                }
+            }, 500);
+        });
+    }
+}
+
+// Store and retrieve viewed products from localStorage
+function getViewedProducts() {
+    const stored = localStorage.getItem('{{companyNameSlug}}_viewed_products');
+    return stored ? JSON.parse(stored) : [];
+}
+
+function addViewedProduct(productName) {
+    let viewed = getViewedProducts();
+
+    // Add to beginning of array (most recent first)
+    viewed = viewed.filter(p => p !== productName); // Remove if already exists
+    viewed.unshift(productName);
+
+    // Keep only last 5 products
+    viewed = viewed.slice(0, 5);
+
+    localStorage.setItem('{{companyNameSlug}}_viewed_products', JSON.stringify(viewed));
+    return viewed;
+}
+
+// Track product card clicks
+document.addEventListener('DOMContentLoaded', function() {
+    const productCards = document.querySelectorAll('.product-card');
+
+    productCards.forEach(card => {
+        card.addEventListener('click', function() {
+            const productName = this.getAttribute('data-product');
+            const price = this.querySelector('.price').textContent;
+
+            // 1. Track event to Segment
+            analytics.track('{{events.productViewed.name}}', {
+                name: productName,
+                price: price,
+                category: 'Product Detail',
+                location: 'Home Page Grid'
+            });
+
+            // 2. Store in localStorage for instant personalization
+            const viewedProducts = addViewedProduct(productName);
+
+            // 3. Set traits on the profile for Segment UI
+            analytics.identify({
+                {{traits.lastProductViewed}}: productName,
+                {{traits.productsViewedList}}: viewedProducts,
+                {{traits.productViewCount}}: viewedProducts.length,
+                last_product_view_date: new Date().toISOString()
+            });
+
+            console.log(`Tracked: ${productName} (Total products viewed: ${viewedProducts.length})`);
+
+            // 4. Immediately personalize the hero
+            personalizeHero(productName);
+
+            // Show toast notification
+            showToast('Segment Event Fired', `{{events.productViewed.name}}: ${productName} - ${price}`);
+        });
+    });
+});
+
+// Track navigation clicks
+document.querySelectorAll('[data-nav]').forEach(link => {
+    link.addEventListener('click', function(e) {
+        e.preventDefault();
+        const section = this.getAttribute('data-nav');
+
+        analytics.track('{{events.navigationClick.name}}', {
+            section: section,
+            text: this.textContent
+        });
+
+        console.log(`Navigation to ${section}`);
+    });
+});
+
+// Track CTA button clicks
+document.querySelectorAll('.cta-button').forEach(button => {
+    button.addEventListener('click', function(e) {
+        if (this.getAttribute('type') !== 'submit') {
+            const buttonText = this.textContent;
+            analytics.track('{{events.ctaClicked.name}}', {
+                text: buttonText,
+                location: this.id === 'heroButton' ? 'Hero Section' : 'Unknown'
+            });
+        }
+    });
+});
+
+// Handle form submission
+document.getElementById('leadForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    const formData = {
+        firstName: document.getElementById('firstName').value,
+        lastName: document.getElementById('lastName').value,
+        email: document.getElementById('email').value,
+        phone: document.getElementById('phone').value,
+        interestedIn: document.getElementById('interested').value
+    };
+
+    // Identify the user
+    analytics.identify(formData.email, {
+        first_name: formData.firstName,
+        last_name: formData.lastName,
+        email: formData.email,
+        phone: formData.phone
+    });
+
+    // Track lead submission
+    analytics.track('{{events.leadSubmitted.name}}', {
+        interested_in: formData.interestedIn,
+        form_location: 'Home Page',
+        lead_source: 'Website'
+    });
+
+    // Show success toast
+    showToast('Lead Submitted', `Thank you, ${formData.firstName}! We'll be in touch soon.`, 5000);
+    this.reset();
+
+    // Reload personalization after identify
+    setTimeout(() => {
+        initPersonalization();
+    }, 1000);
+});
+
+// Scroll to products section
+function scrollToProducts() {
+    document.getElementById('productsSection').scrollIntoView({
+        behavior: 'smooth',
+        block: 'start'
+    });
+}
+
+// Track location visit (simulated - in production would be triggered by actual visit)
+function trackLocationVisit(location) {
+    analytics.track('{{events.locationVisit.name}}', {
+        location: location,
+        date: new Date().toISOString(),
+        source: 'Website Booking'
+    });
+}
+
+// Initialize personalization
+initPersonalization();
+
+console.log('{{companyName}} Demo Site Loaded - Segment tracking active');
+console.log('Previously viewed products (localStorage):', getViewedProducts());
+
+// Log anonymous ID once Segment loads
+if (typeof analytics !== 'undefined') {
+    analytics.ready(function() {
+        setTimeout(() => {
+            console.log('Anonymous ID:', getAnonymousId());
+        }, 100);
+    });
+}
+
+// Demo helper functions - available in console
+
+// Soft Reset: Clear viewed products only (keeps same anonymous user)
+window.softReset = function() {
+    console.log('Soft Reset: Clearing viewed products...');
+
+    // Clear localStorage (viewed products list)
+    localStorage.clear();
+
+    console.log('Viewed products cleared! "Continue Where You Left Off" will disappear.');
+    console.log('Same anonymous user - events still tracked to Segment');
+
+    // Reload page
+    setTimeout(() => {
+        location.reload();
+    }, 500);
+};
+
+// Hard Reset: Create brand new anonymous user
+window.hardReset = function() {
+    console.log('Hard Reset: Creating new anonymous user...');
+
+    // Clear localStorage
+    localStorage.clear();
+
+    // Clear Segment identity (creates new anonymous_id)
+    if (typeof analytics !== 'undefined' && analytics.reset) {
+        analytics.reset();
+    }
+
+    console.log('New anonymous user will be created!');
+    console.log('You will have a fresh anonymous_id in Segment');
+
+    // Reload page
+    setTimeout(() => {
+        location.reload();
+    }, 500);
+};
+
+// Legacy alias for backwards compatibility
+window.resetDemo = window.hardReset;
+
+console.log('Demo Reset Commands:');
+console.log('   softReset()  - Clear viewed products only (same Segment user)');
+console.log('   hardReset()  - New anonymous user (fresh start)');
