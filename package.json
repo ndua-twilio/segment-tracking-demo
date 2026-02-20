@@ -1,0 +1,15 @@
+{
+  "name": "segment-tracking-demo-generator",
+  "version": "1.0.0",
+  "description": "AI-powered generator for Segment tracking demo websites",
+  "main": "skill.js",
+  "scripts": {
+    "start": "node skill.js"
+  },
+  "keywords": ["segment", "demo", "tracking", "personalization"],
+  "author": "Nitin Dua <ndua@twilio.com>",
+  "license": "MIT",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.30.0"
+  }
+}
