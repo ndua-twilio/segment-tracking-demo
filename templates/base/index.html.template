@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{companyName}} - {{industry}}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            line-height: 1.6;
+            color: #2d3748;
+            background: #ffffff;
+        }
+
+        header {
+            background: #ffffff;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 20px 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        nav {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 40px;
+        }
+
+        .logo {
+            font-size: 28px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            color: #2d3748;
+        }
+
+        nav ul {
+            list-style: none;
+            display: flex;
+            gap: 40px;
+        }
+
+        nav a {
+            color: #718096;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 15px;
+            transition: color 0.2s;
+        }
+
+        nav a:hover {
+            color: {{colors.primary}};
+        }
+
+        .personalization-banner {
+            background: {{colors.accent}};
+            color: white;
+            padding: 14px 32px;
+            text-align: center;
+            display: none;
+            box-shadow: 0 2px 8px rgba(82, 189, 149, 0.2);
+        }
+
+        .personalization-banner.active {
+            display: block;
+        }
+
+        .hero {
+            background: linear-gradient(135deg, {{colors.primary}} 0%, #8B9FB8 100%);
+            min-height: 580px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            color: white;
+            padding: 80px 40px;
+            position: relative;
+            transition: background 0.8s ease-in-out;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg width="60" height="60" xmlns="http://www.w3.org/2000/svg"><circle cx="30" cy="30" r="1" fill="%23ffffff" opacity="0.3"/></svg>');
+            opacity: 0.4;
+        }
+
+        .hero-content {
+            max-width: 900px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero-content h1 {
+            font-size: 68px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            letter-spacing: -1.5px;
+            line-height: 1.1;
+            transition: opacity 0.3s;
+        }
+
+        .hero-content p {
+            font-size: 22px;
+            margin-bottom: 40px;
+            font-weight: 400;
+            opacity: 0.95;
+            line-height: 1.5;
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+            transition: opacity 0.3s;
+        }
+
+        .cta-button {
+            background: rgba(255,255,255,0.95);
+            color: {{colors.primary}};
+            padding: 16px 44px;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.2s;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+            background: #ffffff;
+        }
+
+        /* Product-specific hero colors */
+        {{#products}}
+        .hero.{{name}} { background: {{colorGradient}}; }
+        {{/products}}
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 80px 40px;
+        }
+
+        .section-title {
+            font-size: 42px;
+            font-weight: 700;
+            margin-bottom: 32px;
+            text-align: center;
+            color: #2d3748;
+            letter-spacing: -0.5px;
+        }
+
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 32px;
+            margin-top: 48px;
+        }
+
+        .product-card {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            transition: all 0.3s;
+            cursor: pointer;
+            border: 1px solid #e2e8f0;
+        }
+
+        .product-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+        }
+
+        .product-image {
+            width: 100%;
+            height: 200px;
+            background: {{colors.primary}};
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        /* Unique colors for each product card */
+        {{#products}}
+        .product-card[data-product="{{name}}"] .product-image { background: {{colorGradient}}; }
+        {{/products}}
+
+        .product-info {
+            padding: 24px;
+        }
+
+        .product-info h3 {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: #2d3748;
+        }
+
+        .product-info .price {
+            color: {{colors.accent}};
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .product-info p {
+            color: #718096;
+            margin-bottom: 16px;
+            line-height: 1.6;
+        }
+
+        .badge {
+            display: inline-block;
+            background: {{colors.primary}};
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-right: 8px;
+        }
+
+        .badge.new {
+            background: {{colors.accent}};
+        }
+
+        .badge.electric {
+            background: #A395C4;
+        }
+
+        .previously-viewed {
+            background: #f7fafc;
+            padding: 32px;
+            margin-bottom: 32px;
+            border-radius: 12px;
+            border-left: 4px solid {{colors.primary}};
+            display: none;
+        }
+
+        .previously-viewed.active {
+            display: block;
+        }
+
+        .previously-viewed h3 {
+            color: #2d3748;
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .previously-viewed p {
+            color: #718096;
+            line-height: 1.7;
+        }
+
+        .visitor-stats {
+            background: {{colors.primary}};
+            color: white;
+            padding: 28px;
+            border-radius: 12px;
+            margin-bottom: 32px;
+            display: none;
+            box-shadow: 0 4px 12px rgba(107, 140, 174, 0.2);
+        }
+
+        .visitor-stats.active {
+            display: block;
+        }
+
+        .visitor-stats h3 {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        footer {
+            background: #2d3748;
+            color: #e2e8f0;
+            text-align: center;
+            padding: 48px 32px;
+            margin-top: 80px;
+        }
+
+        footer p {
+            margin: 8px 0;
+            opacity: 0.9;
+        }
+
+        .form-section {
+            background: #f7fafc;
+            padding: 64px 32px;
+            margin-top: 64px;
+        }
+
+        .lead-form {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            border: 1px solid #e2e8f0;
+        }
+
+        .lead-form h2 {
+            color: #2d3748;
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .lead-form > p {
+            color: #718096;
+            margin-bottom: 32px;
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #2d3748;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 15px;
+            transition: border-color 0.2s;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: {{colors.primary}};
+            box-shadow: 0 0 0 3px rgba(107, 140, 174, 0.1);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 16px;
+            color: #718096;
+        }
+
+        /* Toast notification - Segment Green */
+        .toast-container {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            z-index: 10000;
+        }
+
+        .toast {
+            background: linear-gradient(135deg, {{colors.accent}} 0%, #3EBD93 100%);
+            color: #ffffff;
+            padding: 18px 24px;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(82, 189, 149, 0.35), 0 4px 12px rgba(82, 189, 149, 0.2);
+            margin-top: 12px;
+            min-width: 320px;
+            max-width: 400px;
+            animation: slideIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border: none;
+        }
+
+        .toast.fadeOut {
+            animation: fadeOut 0.4s ease-out forwards;
+        }
+
+        .toast-title {
+            font-weight: 600;
+            font-size: 12px;
+            margin-bottom: 6px;
+            color: rgba(255, 255, 255, 0.9);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .toast-message {
+            font-size: 14px;
+            font-weight: 500;
+            color: #ffffff;
+            line-height: 1.5;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadeOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav>
+            <div class="logo">{{companyName}}</div>
+            <ul>
+                {{#navigation}}
+                <li><a href="#" data-nav="{{.}}">{{.}}</a></li>
+                {{/navigation}}
+            </ul>
+        </nav>
+    </header>
+
+    <div class="personalization-banner" id="personalBanner">
+        <strong id="personalMessage">{{messaging.welcomeBack}}</strong>
+    </div>
+
+    <section class="hero" id="heroSection">
+        <div class="hero-content">
+            <h1 id="heroTitle">Welcome to {{companyName}}</h1>
+            <p id="heroSubtitle">Discover our products and services</p>
+            <button class="cta-button" id="heroButton" onclick="scrollToProducts()">Explore Now</button>
+        </div>
+    </section>
+
+    <div class="container">
+        <div class="visitor-stats" id="visitorStats">
+            <h3>Your Journey With Us</h3>
+            <p id="statsContent"></p>
+        </div>
+
+        <div class="previously-viewed" id="previouslyViewed">
+            <h3>{{messaging.continueJourney}}</h3>
+            <p id="viewedContent"></p>
+        </div>
+
+        <h2 class="section-title" id="productsSection">Our Products</h2>
+
+        <div class="products-grid" id="productsGrid">
+            {{#products}}
+            <div class="product-card" data-product="{{name}}">
+                <div class="product-image">{{name}}</div>
+                <div class="product-info">
+                    <h3>{{name}}</h3>
+                    <div class="price">{{price}}</div>
+                    <p>{{description}}</p>
+                    {{#badges}}
+                    <span class="badge">{{.}}</span>
+                    {{/badges}}
+                </div>
+            </div>
+            {{/products}}
+        </div>
+
+        <div class="form-section">
+            <div class="lead-form">
+                <h2>Get in Touch</h2>
+                <p style="margin-bottom: 2rem; color: #7f8c8d;">Interested in learning more? Leave your details and we'll be in touch.</p>
+                <form id="leadForm">
+                    <div class="form-group">
+                        <label for="firstName">First Name *</label>
+                        <input type="text" id="firstName" name="firstName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="lastName">Last Name *</label>
+                        <input type="text" id="lastName" name="lastName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="email">Email *</label>
+                        <input type="email" id="email" name="email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="phone">Phone</label>
+                        <input type="tel" id="phone" name="phone">
+                    </div>
+                    <div class="form-group">
+                        <label for="interested">Interested In</label>
+                        <select id="interested" name="interested">
+                            <option value="">Select an option</option>
+                            {{#products}}
+                            <option value="{{name}}">{{name}}</option>
+                            {{/products}}
+                        </select>
+                    </div>
+                    <button type="submit" class="cta-button" style="width: 100%;">Submit Enquiry</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast notification container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <footer>
+        <p>&copy; 2026 {{companyName}}. All rights reserved.</p>
+        <p>Demo website for Segment tracking demonstration</p>
+    </footer>
+
+    <!-- Product Data for Personalization -->
+    <script>
+        const PRODUCT_DATA = {
+            {{#products}}
+            "{{name}}": {
+                title: "{{heroTitle}}",
+                subtitle: "{{heroSubtitle}}",
+                cta: "{{ctaText}}",
+                background: "linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.6))"
+            },
+            {{/products}}
+        };
+    </script>
+
+    <!-- Segment Analytics.js -->
+    <script>
+        !function(){var analytics=window.analytics=window.analytics||[];if(!analytics.initialize)if(analytics.invoked)window.console&&console.error&&console.error("Segment snippet included twice.");else{analytics.invoked=!0;analytics.methods=["trackSubmit","trackClick","trackLink","trackForm","pageview","identify","reset","group","track","ready","alias","debug","page","once","off","on","addSourceMiddleware","addIntegrationMiddleware","setAnonymousId","addDestinationMiddleware"];analytics.factory=function(e){return function(){var t=Array.prototype.slice.call(arguments);t.unshift(e);analytics.push(t);return analytics}};for(var e=0;e<analytics.methods.length;e++){var key=analytics.methods[e];analytics[key]=analytics.factory(key)}analytics.load=function(key,e){var t=document.createElement("script");t.type="text/javascript";t.async=!0;t.src="https://cdn.segment.com/analytics.js/v1/" + key + "/analytics.min.js";var n=document.getElementsByTagName("script")[0];n.parentNode.insertBefore(t,n);analytics._loadOptions=e};analytics._writeKey="{{writeKey}}";;analytics.SNIPPET_VERSION="4.15.3";
+        analytics.load("{{writeKey}}");
+        }}();
+    </script>
+
+    <script src="app.js"></script>
+</body>
+</html>
