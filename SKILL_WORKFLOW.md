@@ -13,23 +13,31 @@ This is a **conversational skill**. When invoked, Claude asks questions, generat
 Ask the user these questions in the conversation:
 
 1. **Company name:** "What's the company/prospect name?"
-   - Validate: not empty
-   - Sanitize for folder name (lowercase, hyphens, no special chars)
+   - Validate: Must not be empty
+   - Sanitize for folder name:
+     - Convert to lowercase
+     - Replace spaces with hyphens
+     - Remove unsafe filesystem characters: `< > : " / \ | ? *`
+     - Example: "Acme Corp" → "acme-corp"
 
 2. **Industry:** "What industry? (e.g., Travel, SaaS, E-Commerce, Healthcare)"
-   - Validate: not empty
+   - Validate: Must not be empty
 
 3. **Segment Write Key:** "What's the Segment Write Key?"
-   - Validate: alphanumeric
+   - Validate: Must be alphanumeric only (no special characters)
+   - Should look like: `wdV3vHMn0pqv57pkP4rOItc2oB0j52Rx`
 
 4. **Profiles API Token:** "What's the Profiles API Token?"
-   - Validate: not empty
+   - Validate: Must not be empty
+   - Can contain any characters (long token string)
 
 5. **Space ID:** "What's the Space ID?"
-   - Validate: starts with "spa_"
+   - Validate: Must start with "spa_"
+   - Example: `spa_qcqudEXq7zFc6ZtEr56HJT`
 
 6. **Output Location:** "Where should I create the demo? (provide full path or just press enter for current directory)"
    - Default: current working directory
+   - Sanitize: Remove any `..` path traversal attempts
 
 7. **Website (optional):** "Company website URL? (optional - helps with context)"
 
@@ -93,13 +101,42 @@ Generate for:
 For each template in `templates/base/`:
 
 1. **Read the template file**
-2. **Replace variables:**
-   - Simple: `{{companyName}}` → actual company name
-   - Nested: `{{colors.primary}}` → "#6B8CAE"
-   - Arrays: `{{#products}}...{{/products}}` → loop through products
+2. **Replace variables using these rules:**
+
+**Simple variable replacement:**
+- Pattern: `{{variableName}}`
+- Replace with actual value
+- Example: `{{companyName}}` → "Acme Travel"
+
+**Nested object access:**
+- Pattern: `{{object.property}}`
+- Access nested values with dot notation
+- Example: `{{colors.primary}}` → "#6B8CAE"
+- Example: `{{events.productViewed.name}}` → "Hotel Viewed"
+
+**Array iteration:**
+- Pattern: `{{#arrayName}}...content...{{/arrayName}}`
+- Loop through array and repeat content for each item
+- Inside loop, use `{{.}}` for the item itself, or `{{propertyName}}` for object properties
+- Example:
+  ```
+  {{#products}}
+  <div>{{name}} - {{price}}</div>
+  {{/products}}
+  ```
+  Becomes:
+  ```
+  <div>Beach Resort - From $299/night</div>
+  <div>City Hotel - From $189/night</div>
+  ```
+
+**Handling missing variables:**
+- If a variable doesn't exist, leave the `{{variable}}` as-is (or skip it)
+- Don't crash, just continue processing
+
 3. **Write the processed file** to output location
 
-Templates to process:
+**Templates to process:**
 - `index.html.template` → `index.html`
 - `app.js.template` → `app.js`
 - `server.js.template` → `server.js`
