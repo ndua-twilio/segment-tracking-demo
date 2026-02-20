@@ -9,7 +9,5 @@
   "keywords": ["segment", "demo", "tracking", "personalization"],
   "author": "Nitin Dua <ndua@twilio.com>",
   "license": "MIT",
-  "dependencies": {
-    "@anthropic-ai/sdk": "^0.30.0"
-  }
+  "dependencies": {}
 }
