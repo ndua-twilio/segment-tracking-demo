@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const axios = require('axios');
+const path = require('path');
 
 const app = express();
 const PORT = 3000;
@@ -104,6 +105,7 @@ app.get('/api/profile/:profileId', async (req, res) => {
 
 // Start server
 app.listen(PORT, () => {
+    const indexPath = path.join(__dirname, 'index.html');
     console.log(`\n{{companyName}} Demo Proxy Server running on http://localhost:${PORT}`);
-    console.log(`\nServer is ready! Open index.html to test personalization.\n`);
+    console.log(`\nServer is ready! Open the demo:\n${indexPath}\n`);
 });

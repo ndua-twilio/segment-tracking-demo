@@ -51,14 +51,21 @@ Read `/Users/ndua/Documents/Projects/segment-demo-generator/lib/ai-generator.js`
 
 Generate the following based on industry and context (Claude generates this directly, no API calls needed):
 
-**1. Products (5-6 items)**
+**1. Products (flexible count based on industry)**
+Generate 3-12 items depending on what makes sense for the industry:
+- E-commerce: 6-8 products
+- SaaS: 3-4 pricing tiers
+- Travel: 4-6 destinations
+- Media/Publishing: 5-12 articles
+- Other: Use judgment based on industry norms
+
 For each product:
 - name: string (2-5 words)
-- price: string (formatted as "From $X")
+- price: string (flexible format: "From $X", "12 min read", "$X/month", etc.)
 - description: string (2 sentences)
 - heroTitle: string (engaging headline)
 - heroSubtitle: string (1 sentence)
-- ctaText: string (button text like "Get Started")
+- ctaText: string (button text like "Get Started", "Read Article", etc.)
 - badges: array (1-2 tags like ["Popular", "New"])
 - colorGradient: string (CSS gradient)
 

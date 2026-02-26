@@ -192,6 +192,13 @@
             box-shadow: 0 8px 24px rgba(0,0,0,0.12);
         }
 
+        .product-badges {
+            padding: 16px 16px 0 16px;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
         .product-image {
             width: 100%;
             height: 200px;
@@ -637,14 +644,15 @@
         <div class="products-grid" id="productsGrid">
             {{#products}}
             <div class="product-card" data-product="{{name}}">
-                <div class="product-image">{{name}}</div>
+                <div class="product-badges">
+                    {{#badges}}
+                    <span class="badge">{{.}}</span>
+                    {{/badges}}
+                </div>
                 <div class="product-info">
                     <h3>{{name}}</h3>
                     <div class="price">{{price}}</div>
                     <p>{{description}}</p>
-                    {{#badges}}
-                    <span class="badge">{{.}}</span>
-                    {{/badges}}
                 </div>
             </div>
             {{/products}}
