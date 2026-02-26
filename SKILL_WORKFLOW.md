@@ -147,8 +147,8 @@ For each template in `templates/base/`:
   - Do all variable replacements in memory (don't use shell commands like sed/awk/cat)
   - Use the Write tool once with the final processed content
 - **DO NOT use shell commands for template processing**
-  - ❌ Don't use: `sed`, `awk`, `cat`, pipes, or shell redirects
-  - ✅ Instead: Read the template, replace variables as strings, Write the result
+  - AVOID: `sed`, `awk`, `cat`, pipes, or shell redirects
+  - USE: Read the template, replace variables as strings, Write the result
 - **Write tool works directly for new files**
   - You can write new files directly without reading them first
   - No need to `touch` or create empty files first
