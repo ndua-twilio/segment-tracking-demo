@@ -310,34 +310,6 @@
             opacity: 0.9;
         }
 
-        .form-section {
-            background: #f7fafc;
-            padding: 64px 32px;
-            margin-top: 64px;
-        }
-
-        .lead-form {
-            max-width: 600px;
-            margin: 0 auto;
-            background: white;
-            padding: 40px;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-            border: 1px solid #e2e8f0;
-        }
-
-        .lead-form h2 {
-            color: #2d3748;
-            font-size: 28px;
-            font-weight: 700;
-            margin-bottom: 12px;
-        }
-
-        .lead-form > p {
-            color: #718096;
-            margin-bottom: 32px;
-        }
-
         .form-group {
             margin-bottom: 24px;
         }
@@ -676,40 +648,6 @@
             {{/products}}
         </div>
 
-        <div class="form-section">
-            <div class="lead-form">
-                <h2>Get in Touch</h2>
-                <p style="margin-bottom: 2rem; color: #7f8c8d;">Interested in learning more? Leave your details and we'll be in touch.</p>
-                <form id="leadForm">
-                    <div class="form-group">
-                        <label for="firstName">First Name *</label>
-                        <input type="text" id="firstName" name="firstName" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="lastName">Last Name *</label>
-                        <input type="text" id="lastName" name="lastName" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="email">Email *</label>
-                        <input type="email" id="email" name="email" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="phone">Phone</label>
-                        <input type="tel" id="phone" name="phone">
-                    </div>
-                    <div class="form-group">
-                        <label for="interested">Interested In</label>
-                        <select id="interested" name="interested">
-                            <option value="">Select an option</option>
-                            {{#products}}
-                            <option value="{{name}}">{{name}}</option>
-                            {{/products}}
-                        </select>
-                    </div>
-                    <button type="submit" class="cta-button" style="width: 100%;">Submit Enquiry</button>
-                </form>
-            </div>
-        </div>
     </div>
 
     <!-- Toast notification container -->

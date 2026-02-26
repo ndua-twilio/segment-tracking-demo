@@ -69,7 +69,6 @@ Generate for (industry-specific):
 - productViewed: { name: "Industry-specific name", properties: [...] }
 - navigationClick: { name: "Navigation Click", properties: [...] }
 - ctaClicked: { name: "Industry-specific CTA name", properties: [...] }
-- leadSubmitted: { name: "Industry-specific lead name", properties: [...] }
 - locationVisit (optional): { name: "Industry-specific location", properties: [...] }
 
 Standard events (fixed names):

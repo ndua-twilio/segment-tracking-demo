@@ -475,43 +475,6 @@ document.querySelectorAll('.cta-button').forEach(button => {
     });
 });
 
-// Handle form submission
-document.getElementById('leadForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-
-    const formData = {
-        firstName: document.getElementById('firstName').value,
-        lastName: document.getElementById('lastName').value,
-        email: document.getElementById('email').value,
-        phone: document.getElementById('phone').value,
-        interestedIn: document.getElementById('interested').value
-    };
-
-    // Identify the user
-    analytics.identify(formData.email, {
-        first_name: formData.firstName,
-        last_name: formData.lastName,
-        email: formData.email,
-        phone: formData.phone
-    });
-
-    // Track lead submission
-    analytics.track('{{events.leadSubmitted.name}}', {
-        interested_in: formData.interestedIn,
-        form_location: 'Home Page',
-        lead_source: 'Website'
-    });
-
-    // Show success toast
-    showToast('Lead Submitted', `Thank you, ${formData.firstName}! We'll be in touch soon.`, 5000);
-    this.reset();
-
-    // Reload personalization after identify
-    setTimeout(() => {
-        initPersonalization();
-    }, 1000);
-});
-
 // Scroll to products section
 function scrollToProducts() {
     document.getElementById('productsSection').scrollIntoView({
