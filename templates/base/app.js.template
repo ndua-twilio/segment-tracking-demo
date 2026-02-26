@@ -532,6 +532,111 @@ function trackLocationVisit(location) {
 // Initialize personalization
 initPersonalization();
 
+// Modal functions
+function openSignUpModal() {
+    document.getElementById('signupModal').classList.add('active');
+    analytics.track('Sign Up Modal Opened', {
+        source: 'Navigation'
+    });
+}
+
+function closeSignUpModal() {
+    document.getElementById('signupModal').classList.remove('active');
+}
+
+function openSignInModal() {
+    document.getElementById('signinModal').classList.add('active');
+    analytics.track('Sign In Modal Opened', {
+        source: 'Navigation'
+    });
+}
+
+function closeSignInModal() {
+    document.getElementById('signinModal').classList.remove('active');
+}
+
+// Sign Up form handler
+document.getElementById('signupForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    const firstName = document.getElementById('signupFirstName').value;
+    const lastName = document.getElementById('signupLastName').value;
+    const email = document.getElementById('signupEmail').value;
+
+    // Identify the user
+    analytics.identify(email, {
+        firstName: firstName,
+        lastName: lastName,
+        email: email
+    });
+
+    // Track sign up event
+    analytics.track('User Signed Up', {
+        email: email,
+        firstName: firstName,
+        lastName: lastName,
+        method: 'email',
+        source: 'Website Modal'
+    });
+
+    // Show toast
+    showToast('ACCOUNT CREATED', `Welcome, ${firstName}! Your account has been created.`);
+
+    // Close modal and reset form
+    closeSignUpModal();
+    this.reset();
+});
+
+// Sign In form handler
+document.getElementById('signinForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    const email = document.getElementById('signinEmail').value;
+
+    // Identify the user
+    analytics.identify(email, {
+        email: email
+    });
+
+    // Track sign in event
+    analytics.track('User Signed In', {
+        email: email,
+        method: 'email',
+        source: 'Website Modal'
+    });
+
+    // Show toast
+    showToast('SIGNED IN', `Welcome back! You're now signed in.`);
+
+    // Close modal and reset form
+    closeSignInModal();
+    this.reset();
+});
+
+// Newsletter form handler
+document.getElementById('newsletterForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    const email = document.getElementById('newsletterEmail').value;
+
+    // Identify the user
+    analytics.identify(email, {
+        email: email
+    });
+
+    // Track newsletter subscription
+    analytics.track('Newsletter Subscribed', {
+        email: email,
+        source: 'Website Newsletter Box'
+    });
+
+    // Show toast
+    showToast('SUBSCRIBED', 'Thank you for subscribing to our newsletter!');
+
+    // Reset form
+    this.reset();
+});
+
 console.log('{{companyName}} Demo Site Loaded - Segment tracking active');
 console.log('Previously viewed products (localStorage):', getViewedProducts());
 

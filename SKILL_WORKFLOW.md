@@ -65,12 +65,19 @@ For each product:
 **2. Events Schema**
 CRITICAL: Must be INDUSTRY-SPECIFIC (not generic "Product Viewed")
 
-Generate for:
+Generate for (industry-specific):
 - productViewed: { name: "Industry-specific name", properties: [...] }
 - navigationClick: { name: "Navigation Click", properties: [...] }
 - ctaClicked: { name: "Industry-specific CTA name", properties: [...] }
 - leadSubmitted: { name: "Industry-specific lead name", properties: [...] }
 - locationVisit (optional): { name: "Industry-specific location", properties: [...] }
+
+Standard events (fixed names):
+- User Signed Up: { email, firstName, lastName, method: "email", source: "Website Modal" }
+- User Signed In: { email, method: "email", source: "Website Modal" }
+- Newsletter Subscribed: { email, source: "Website Newsletter Box" }
+- Sign Up Modal Opened: { source: "Navigation" }
+- Sign In Modal Opened: { source: "Navigation" }
 
 **3. Traits Schema (snake_case)**
 - lastProductViewed: "last_{product}_viewed"
@@ -168,6 +175,8 @@ Location: {full-path}
 What was created:
 - 6 products for {industry} industry
 - Industry-specific events (e.g., "Hotel Viewed")
+- Sign Up/Sign In modals with authentication tracking
+- Newsletter subscription box
 - Segment tracking with write key
 - Profiles API personalization
 - Toast notifications
@@ -180,8 +189,10 @@ Next steps:
 
 Demo features:
 - Click products to track events
+- Sign up or sign in via navigation buttons
+- Subscribe to newsletter (bottom-right box)
 - Wait 60s and refresh to see personalization
-- Use softReset() or hardReset() in console
+- Use resetDemo() in console or ?reset=true URL parameter
 ```
 
 ## Key Principles
