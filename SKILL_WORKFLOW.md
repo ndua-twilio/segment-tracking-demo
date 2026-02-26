@@ -141,6 +141,25 @@ For each template in `templates/base/`:
 - If a variable doesn't exist, leave the `{{variable}}` as-is (or skip it)
 - Don't crash, just continue processing
 
+**IMPORTANT - Technical Implementation:**
+- **Read template → Replace in memory → Write final file**
+  - Use the Read tool to get template content as a string
+  - Do all variable replacements in memory (don't use shell commands like sed/awk/cat)
+  - Use the Write tool once with the final processed content
+- **DO NOT use shell commands for template processing**
+  - ❌ Don't use: `sed`, `awk`, `cat`, pipes, or shell redirects
+  - ✅ Instead: Read the template, replace variables as strings, Write the result
+- **Write tool works directly for new files**
+  - You can write new files directly without reading them first
+  - No need to `touch` or create empty files first
+- **Example workflow:**
+  ```
+  1. Read: templates/base/index.html.template
+  2. In memory: Replace {{companyName}} with "Acme Corp"
+  3. In memory: Replace {{writeKey}} with "abc123"
+  4. Write: output-dir/index.html (with all replacements done)
+  ```
+
 3. **Write the processed file** to output location
 
 **Templates to process:**
