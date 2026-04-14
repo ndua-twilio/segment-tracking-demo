@@ -37,6 +37,23 @@ function getUrlParams() {
     return result;
 }
 
+// Get UTM parameters from URL for attribution
+function getUtmParams() {
+    const params = new URLSearchParams(window.location.search);
+    const utmParams = {};
+
+    // Standard UTM parameters
+    const utmKeys = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'];
+
+    utmKeys.forEach(key => {
+        if (params.has(key)) {
+            utmParams[key] = params.get(key);
+        }
+    });
+
+    return utmParams;
+}
+
 // Check if visitor arrived from email campaign or other identified source
 function handleIdentifiedVisitor() {
     const params = getUrlParams();
@@ -83,13 +100,22 @@ if (typeof analytics !== 'undefined') {
         // Handle identified visitors first
         const pageContext = handleIdentifiedVisitor();
 
+        // Get UTM parameters for attribution
+        const utmParams = getUtmParams();
+
         // Track page view on load
         analytics.page('Home', {
             path: window.location.pathname,
             url: window.location.href,
             title: document.title,
-            ...pageContext
+            ...pageContext,
+            ...utmParams
         });
+
+        console.log('{{companyName}} Demo Site Loaded - Segment tracking active');
+        if (Object.keys(utmParams).length > 0) {
+            console.log('UTM parameters detected:', utmParams);
+        }
     });
 }
 
@@ -526,24 +552,26 @@ document.getElementById('signupForm').addEventListener('submit', function(e) {
     const lastName = document.getElementById('signupLastName').value;
     const email = document.getElementById('signupEmail').value;
 
-    // Identify the user
+    // Identify the user with snake_case traits (Segment best practice)
     analytics.identify(email, {
-        firstName: firstName,
-        lastName: lastName,
+        first_name: firstName,
+        last_name: lastName,
         email: email
     });
 
     // Track sign up event
     analytics.track('User Signed Up', {
         email: email,
-        firstName: firstName,
-        lastName: lastName,
+        first_name: firstName,
+        last_name: lastName,
         method: 'email',
         source: 'Website Modal'
     });
 
+    console.log('User signed up:', email);
+
     // Show toast
-    showToast('ACCOUNT CREATED', `Welcome, ${firstName}! Your account has been created.`);
+    showToast('Segment Event Fired', `User Signed Up: ${email}`);
 
     // Close modal and reset form
     closeSignUpModal();
@@ -568,8 +596,10 @@ document.getElementById('signinForm').addEventListener('submit', function(e) {
         source: 'Website Modal'
     });
 
+    console.log('User signed in:', email);
+
     // Show toast
-    showToast('SIGNED IN', `Welcome back! You're now signed in.`);
+    showToast('Segment Event Fired', `User Signed In: ${email}`);
 
     // Close modal and reset form
     closeSignInModal();
@@ -593,8 +623,10 @@ document.getElementById('newsletterForm').addEventListener('submit', function(e)
         source: 'Website Newsletter Box'
     });
 
+    console.log('Newsletter subscription:', email);
+
     // Show toast
-    showToast('SUBSCRIBED', 'Thank you for subscribing to our newsletter!');
+    showToast('Segment Event Fired', `Newsletter Subscribed: ${email}`);
 
     // Reset form
     this.reset();

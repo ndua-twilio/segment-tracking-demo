@@ -18,4 +18,5 @@ Thumbs.db
 npm-debug.log*
 
 # Generated demos (keep locally, don't commit with credentials)
-*-demo/
+generated-demos/*
+!generated-demos/README.md

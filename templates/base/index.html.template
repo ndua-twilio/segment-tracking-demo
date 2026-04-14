@@ -742,6 +742,56 @@
             },
             {{/products}}
         };
+
+        // INSTANT PERSONALIZATION - Runs immediately on page load (prevents FOUC)
+        // FOUC = Flash of Unpersonalized Content (generic hero showing before personalized version)
+        (function() {
+            let personalizedProduct = null;
+
+            // Check localStorage for previously viewed products
+            try {
+                const storedProducts = localStorage.getItem('{{companyNameSlug}}_viewed_products');
+                if (storedProducts) {
+                    const products = JSON.parse(storedProducts);
+                    if (products.length > 0) {
+                        personalizedProduct = products[0]; // Most recent
+                        console.log('Instant personalization from localStorage:', personalizedProduct);
+                    }
+                }
+            } catch (e) {
+                console.warn('Could not read localStorage for personalization:', e);
+            }
+
+            // Apply personalization immediately if found
+            if (personalizedProduct && PRODUCT_DATA[personalizedProduct]) {
+                const heroData = PRODUCT_DATA[personalizedProduct];
+                const heroClass = personalizedProduct.toLowerCase().replace(/ /g, '-');
+
+                // Wait for DOM to be ready, then apply immediately
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', function() {
+                        applyInstantPersonalization(heroClass, heroData);
+                    });
+                } else {
+                    applyInstantPersonalization(heroClass, heroData);
+                }
+            }
+
+            function applyInstantPersonalization(heroClass, heroData) {
+                const heroSection = document.getElementById('heroSection');
+                const heroTitle = document.getElementById('heroTitle');
+                const heroSubtitle = document.getElementById('heroSubtitle');
+                const heroButton = document.getElementById('heroButton');
+
+                if (heroSection && heroTitle && heroSubtitle && heroButton) {
+                    heroSection.className = 'hero ' + heroClass;
+                    heroTitle.textContent = heroData.title;
+                    heroSubtitle.textContent = heroData.subtitle;
+                    heroButton.textContent = heroData.cta;
+                    console.log('Hero personalized instantly on page load - no flash');
+                }
+            }
+        })();
     </script>
 
     <!-- Segment Analytics.js -->

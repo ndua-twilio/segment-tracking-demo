@@ -43,6 +43,11 @@ Ask the user these questions in the conversation:
 
 8. **Notes (optional):** "Any notes or context about this prospect? (Gong transcript, use cases, etc.)"
 
+9. **Auto-Instrumentation (optional):** "Do you want to enable Auto-Instrumentation? (yes/no)"
+   - Default: no
+   - If yes, add the Auto-Instrumentation Signals plugin to the generated demo
+   - If no, only include standard Analytics.js
+
 ### Phase 2: Generate Content
 
 **Templates Location:** All templates are in `/Users/ndua/Documents/Projects/segment-demo-generator/templates/base/` relative to the skill repository root.
@@ -116,6 +121,17 @@ For each template in `templates/base/`:
 1. **Read the template file**
 2. **Replace variables using these rules:**
 
+**CRITICAL - Template Processing Rules:**
+- **ONLY replace {{variables}} with actual values**
+- **DO NOT add new functionality, endpoints, or features**
+- **DO NOT modify the structure, logic, or output format**
+- **DO NOT "improve" or "enhance" the template code**
+- **DO NOT add extra console.log statements or elaborate startup messages**
+- If the template has 2 endpoints, the output must have exactly 2 endpoints
+- If the template has 3 lines of console output, the output must have exactly 3 lines
+- Template processing = variable substitution ONLY, nothing more
+- The generated file should be identical to the template except for replaced variables
+
 **Simple variable replacement:**
 - Pattern: `{{variableName}}`
 - Replace with actual value
@@ -166,6 +182,18 @@ For each template in `templates/base/`:
   4. Write: output-dir/index.html (with all replacements done)
   ```
 
+**CRITICAL - Output Verbosity Rules:**
+- **BE CONCISE AND EFFICIENT - Keep responses under 2000 tokens**
+- **Show progress updates as you work so the user knows what's happening**
+- **Progress format:** "Processing index.html.template..." then "✓ Generated index.html (12KB)"
+- **DO NOT output full file contents in responses**
+- **DO NOT show the replaced code unless there's an error**
+- **DO NOT list all products, events, or traits in detail**
+- **Summary format:** "✓ Generated 6 products (Bug Bite Relief, Mosquito Spray, etc.)"
+- **Only show code snippets if debugging an error**
+- **Update the user every 30-60 seconds with what you're currently working on**
+- The goal is to complete file generation efficiently without hitting output limits while keeping the user informed
+
 3. **Write the processed file** to output location
 
 **Templates to process:**
@@ -173,6 +201,49 @@ For each template in `templates/base/`:
 - `app.js.template` → `app.js`
 - `server.js.template` → `server.js`
 - `package.json.template` → `package.json`
+
+**Auto-Instrumentation Setup (if user selected yes):**
+
+If the user wants Auto-Instrumentation enabled, add these scripts to the generated HTML files:
+
+1. **Add the Signals SDK script** after the Analytics.js snippet:
+   ```html
+   <!-- Auto-Instrumentation Signals Plugin -->
+   <script src="https://cdn.jsdelivr.net/npm/@segment/analytics-signals@2.4.4/dist/umd/analytics-signals.umd.min.js"></script>
+   ```
+
+2. **Initialize the plugin** after Analytics.js loads:
+   ```html
+   <script>
+       if (typeof analytics !== 'undefined' && analytics.ready) {
+           analytics.ready(function() {
+               // Initialize Auto-Instrumentation Signals Plugin
+               if (typeof SignalsPlugin !== 'undefined') {
+                   try {
+                       var signalsPlugin = new SignalsPlugin();
+                       analytics.register(signalsPlugin);
+
+                       // Expose for debugging
+                       window.signalsPlugin = signalsPlugin;
+
+                       console.log('Auto-Instrumentation Signals enabled! Use ?segment_signals_debug=true to see signals in Event Builder.');
+                   } catch (e) {
+                       console.error('Auto-Instrumentation setup error:', e);
+                   }
+               } else {
+                   console.warn('SignalsPlugin not found. Auto-Instrumentation may not be available.');
+               }
+           });
+       }
+   </script>
+   ```
+
+3. **CRITICAL NOTES:**
+   - Use the exact CDN URL: `https://cdn.jsdelivr.net/npm/@segment/analytics-signals@2.4.4/dist/umd/analytics-signals.umd.min.js`
+   - Must use `new SignalsPlugin()` (with `new` keyword - it's a class constructor)
+   - Must call `analytics.register(signalsPlugin)` to register it
+   - Expose `window.signalsPlugin` for console debugging
+   - Add this to ALL HTML pages in the demo (index.html, creator pages, product pages, etc.)
 
 ### Phase 4: Create Demo Files
 
@@ -182,7 +253,19 @@ For each template in `templates/base/`:
 
 2. **Write all generated files** using the Write tool
 
-3. **Run npm install:**
+3. **Create README.md** with:
+   - Quick start instructions (npm install, npm start)
+   - **IMPORTANT: Note about testing multiple demos** - Must use incognito/private browsing window OR run resetDemo() when testing multiple demos on localhost (localStorage anonymousId persists across demos)
+   - Overview of demo features
+   - List of pages and tracking events
+   - User journey explanation
+   - Personalization features
+   - Reset demo instructions
+   - Configuration details
+   - Auto-Instrumentation instructions (if enabled)
+   - Testing flows
+
+4. **Run npm install:**
    ```bash
    cd {output-path}/{company-name-slug}-demo
    npm install
